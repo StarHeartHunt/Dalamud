@@ -17,6 +17,7 @@ using Dalamud.Plugin.Internal.Loader;
 using Dalamud.Plugin.Internal.Profiles;
 using Dalamud.Plugin.Internal.Types.Manifest;
 using Dalamud.Utility;
+using Newtonsoft.Json;
 
 namespace Dalamud.Plugin.Internal.Types;
 
@@ -91,6 +92,11 @@ internal class LocalPlugin : IDisposable
         catch (ReflectionTypeLoadException ex)
         {
             Log.Error(ex, $"Could not load one or more types when searching for IDalamudPlugin: {this.DllFile.FullName}");
+            foreach (var ex2 in ex.LoaderExceptions)
+            {
+                Log.Error(ex2, "LoaderException");
+            }
+
             // Something blew up when parsing types, but we still want to look for IDalamudPlugin. Let Load() handle the error.
             this.pluginType = ex.Types.FirstOrDefault(type => type != null && type.IsAssignableTo(typeof(IDalamudPlugin)));
         }
@@ -386,7 +392,7 @@ internal class LocalPlugin : IDisposable
 
             // if (pluginManager.IsManifestBanned(this.Manifest) && !this.IsDev)
             if (pluginManager.IsManifestBanned(this.manifest))
-                    throw new BannedPluginException($"Unable to load {this.Name}, banned");
+                throw new BannedPluginException($"Unable to load {this.Name}, banned");
 
             if (this.manifest.ApplicableVersion < startInfo.GameVersion)
                 throw new InvalidPluginOperationException($"Unable to load {this.Name}, no applicable version");
